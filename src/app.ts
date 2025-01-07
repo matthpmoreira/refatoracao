@@ -1,4 +1,5 @@
 import express, { Request, Response, json } from "express";
+import httpStatus from "http-status";
 import "express-async-errors";
 
 import newsRouter from "./routers/news-router";
@@ -8,7 +9,7 @@ const app = express();
 app.use(json());
 
 app.get("/health", (req: Request, res: Response) => {
-  res.status(200).send("I'm ok!");
+  res.status(httpStatus.OK).send("I'm ok!");
 });
 
 app.use("/news", newsRouter);
