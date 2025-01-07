@@ -25,7 +25,8 @@ export async function createNews(newsData: CreateNewsData) {
 
 export async function alterNews(id: number, newsData: AlterNewsData) {
   const news = await getSpecificNews(id);
-  await validate(newsData, news.title !== newsData.title);
+  const isNew = news.title !== newsData.title;
+  await validate(newsData, isNew);
 
   return newsRepository.updateNews(id, newsData);
 }
