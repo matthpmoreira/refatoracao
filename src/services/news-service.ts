@@ -8,7 +8,7 @@ export async function getNews() {
 
 export async function getSpecificNews(id: number) {
   const news = await newsRepository.getNewsById(id);
-  if (!news) {
+  if (news == null) {
     throw {
       name: "NotFound",
       message: `News with id ${id} not found.`
