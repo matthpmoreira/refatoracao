@@ -12,7 +12,7 @@ export async function getNews(req: Request, res: Response) {
 
 export async function getSpecificNews(req: Request, res: Response) {
   const id = parseInt(req.params.id);
-  if (isNaN(id) || id <= 0) {
+  if (!isIdValid(id)) {
     return res.status(httpStatus.BAD_REQUEST).send("Id is not valid.");
   }
 
@@ -29,7 +29,7 @@ export async function createNews(req: Request, res: Response) {
 
 export async function alterNews(req: Request, res: Response) {
   const id = parseInt(req.params.id);
-  if (isNaN(id) || id <= 0) {
+  if (!isIdValid(id)) {
     return res.status(httpStatus.BAD_REQUEST).send("Id is not valid.");
   }
 
@@ -41,10 +41,14 @@ export async function alterNews(req: Request, res: Response) {
 
 export async function deleteNews(req: Request, res: Response) {
   const id = parseInt(req.params.id);
-  if (isNaN(id) || id <= 0) {
+  if (!isIdValid(id)) {
     return res.status(httpStatus.BAD_REQUEST).send("Id is not valid.");
   }
 
   await service.deleteNews(id);
   return res.sendStatus(httpStatus.NO_CONTENT);
+}
+
+function isIdValid(id: number) {
+  return !isNaN(id) && id > 0;
 }
