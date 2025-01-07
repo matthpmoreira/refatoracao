@@ -20,8 +20,8 @@ function BadRequestError(message: string) {
   return { name: "BadRequest", message };
 }
 
-export async function getNews() {
-  return newsRepository.getNews();
+export async function getNews(page: number, order: "asc" | "desc", title: string) {
+  return newsRepository.getNews(page, order, title);
 }
 
 export async function getSpecificNews(id: number) {

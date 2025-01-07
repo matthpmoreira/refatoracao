@@ -5,7 +5,7 @@ import prisma from "../src/database";
 import { faker } from '@faker-js/faker';
 import httpStatus from "http-status";
 
-import { generateRandomNews, persistNewRandomNews } from "./factories/news-factory";
+import {generateRandomNews, persistNewRandomNews, persistNewRandomNewsStringified} from "./factories/news-factory";
 
 const api = supertest(app);
 
@@ -43,6 +43,84 @@ describe("GET /news", () => {
     });
   });
 
+  it("should paginate when there's more than 10 news", async () => {
+    await Promise.all(Array.from({ length: 15 }, persistNewRandomNews));
+
+    const { status, body } = await api.get(`/news`);
+    expect(status).toBe(httpStatus.OK);
+    expect(body).toHaveLength(10);
+    expect(body).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: expect.any(Number),
+        author: expect.any(String),
+        firstHand: expect.any(Boolean),
+        publicationDate: expect.any(String),
+        title: expect.any(String),
+        text: expect.any(String)
+      })
+    ]));
+  });
+
+  it("should be able to request for a specific page", async () => {
+    await Promise.all(Array.from({ length: 15 }, persistNewRandomNews));
+
+    const { status, body } = await api.get(`/news?page=2`);
+    expect(status).toBe(httpStatus.OK);
+    expect(body).toHaveLength(5);
+    expect(body).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: expect.any(Number),
+        author: expect.any(String),
+        firstHand: expect.any(Boolean),
+        publicationDate: expect.any(String),
+        title: expect.any(String),
+        text: expect.any(String)
+      })
+    ]));
+  });
+
+  it("should get in descending order by default", async () => {
+    const news = await Promise.all(Array.from({ length: 3 }, persistNewRandomNewsStringified));
+    news.sort((a, b) => new Date(b.publicationDate).getTime() - new Date(a.publicationDate).getTime());
+
+    const { status, body } = await api.get(`/news`);
+    expect(status).toBe(httpStatus.OK);
+    expect(body).toEqual(news);
+  });
+
+  it("should get in ascending order when requested", async () => {
+    const news = await Promise.all(Array.from({ length: 3 }, persistNewRandomNewsStringified));
+    news.sort((a, b) => new Date(a.publicationDate).getTime() - new Date(b.publicationDate).getTime());
+
+    const { status, body } = await api.get(`/news?order=asc`);
+    expect(status).toBe(httpStatus.OK);
+    expect(body).toEqual(news);
+  });
+
+  it("should get by title when requested", async () => {
+    const news = await Promise.all(Array.from({ length: 3 }, persistNewRandomNewsStringified));
+    const expectedNews = news[1];
+
+    const { status, body } = await api.get(`/news?title=${expectedNews.title}`);
+    expect(status).toBe(httpStatus.OK);
+    expect(body).toEqual([expectedNews]);
+  })
+
+  it("should return 400 when page is less than 0", async () => {
+    const { status } = await api.get(`/news?page=-1`);
+    expect(status).toBe(httpStatus.BAD_REQUEST);
+  })
+
+  it("should return 400 when order is not 'asc' or 'desc'", async () => {
+    const { status } = await api.get(`/news?order=somethingelse`);
+    expect(status).toBe(httpStatus.BAD_REQUEST);
+  })
+
+  it("should return 400 when title is not a string", async () => {
+    const { status } = await api.get(`/news?title=a&title=b`);
+    expect(status).toBe(httpStatus.BAD_REQUEST);
+  })
+
   it("should return 404 when id is not found", async () => {
     const { status } = await api.get(`/news/1`);
     expect(status).toBe(httpStatus.NOT_FOUND);
@@ -52,7 +130,6 @@ describe("GET /news", () => {
     const { status } = await api.get(`/news/0`);
     expect(status).toBe(httpStatus.BAD_REQUEST);
   });
-
 });
 
 describe("POST /news", () => {

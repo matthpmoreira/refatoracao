@@ -1,12 +1,28 @@
 import { Request, Response } from "express";
-import httpStatus from "http-status";
+import httpStatus, {BAD_REQUEST} from "http-status";
 
 import * as service from "./../services/news-service";
 
 import { AlterNewsData, CreateNewsData } from "../repositories/news-repository";
 
 export async function getNews(req: Request, res: Response) {
-  const news = await service.getNews();
+  const page = Number(req.query.page) || 1;
+  const order = req.query.order || "desc";
+  const title = req.query.title || "";
+
+  if (!isPageValid(page)) {
+    return res.status(httpStatus.BAD_REQUEST).send("Page is not valid.");
+  }
+
+  if (!isOrderValid(order)) {
+    return res.status(httpStatus.BAD_REQUEST).send("Search order is not valid.");
+  }
+
+  if (!isTitleValid(title)) {
+    return res.status(httpStatus.BAD_REQUEST).send("Title is not valid.")
+  }
+
+  const news = await service.getNews(page, order, title);
   return res.send(news);
 }
 
@@ -51,4 +67,16 @@ export async function deleteNews(req: Request, res: Response) {
 
 function isIdValid(id: number) {
   return !isNaN(id) && id > 0;
+}
+
+function isPageValid(page: number) {
+  return page > 0;
+}
+
+function isOrderValid(order: unknown): order is "asc" | "desc" {
+  return order === "asc" || order === "desc";
+}
+
+function isTitleValid(title: unknown): title is string {
+  return typeof title === "string";
 }

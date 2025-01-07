@@ -18,6 +18,14 @@ export async function persistNewRandomNews(firstHand = false) {
   });
 }
 
+export async function persistNewRandomNewsStringified(firstHand = false) {
+  const news = await persistNewRandomNews();
+  const createAt = news.createAt.toISOString();
+  const publicationDate = news.publicationDate.toISOString();
+  
+  return { ...news, createAt, publicationDate };
+}
+
 export async function persistNewRandomNewsInThePast(firstHand = false) {
   const eventData = generateRandomNews(firstHand);
   eventData.publicationDate = faker.date.past();
