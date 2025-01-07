@@ -2,6 +2,24 @@ import prisma from "../database";
 import * as newsRepository from "../repositories/news-repository";
 import { AlterNewsData, CreateNewsData } from "../repositories/news-repository";
 
+function NotFoundError(id: number) {
+  return {
+    name: "NotFound",
+    message: `News with id ${id} not found.`
+  };
+}
+
+function ConflictError(title: string) {
+  return {
+    name: "Conflict",
+    message: `News with title ${title} already exist`
+  }
+}
+
+function BadRequestError(message: string) {
+  return { name: "BadRequest", message };
+}
+
 export async function getNews() {
   return newsRepository.getNews();
 }
@@ -9,10 +27,7 @@ export async function getNews() {
 export async function getSpecificNews(id: number) {
   const news = await newsRepository.getNewsById(id);
   if (news == null) {
-    throw {
-      name: "NotFound",
-      message: `News with id ${id} not found.`
-    }
+    throw NotFoundError(id);
   }
 
   return news;
@@ -44,28 +59,19 @@ async function validate(newsData: CreateNewsData, isNew = true) {
     });
 
     if (newsWithTitle) {
-      throw {
-        name: "Conflict",
-        message: `News with title ${newsData.title} already exist`
-      }
+      throw ConflictError(newsData.title);
     }
   }
 
   // checks news text length
   if (newsData.text.length < 500) {
-    throw {
-      name: "BadRequest",
-      message: "The news text must be at least 500 characters long.",
-    };
+    throw BadRequestError("The news text must be at least 500 characters long.");
   }
 
   // checks date
   const currentDate = new Date();
   const publicationDate = new Date(newsData.publicationDate);
   if (publicationDate.getTime() < currentDate.getTime()) {
-    throw {
-      name: "BadRequest",
-      message: "The publication date cannot be in the past.",
-    };
+    throw BadRequestError("The publication date cannot be in the past.");
   }
 }
