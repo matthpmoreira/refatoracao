@@ -52,25 +52,31 @@ export async function deleteNews(id: number) {
 }
 
 async function validate(newsData: CreateNewsData, isNew = true) {
-  // validate if news with specific text already exists
   if (isNew) {
-    const newsWithTitle = await prisma.news.findFirst({
-      where: { title: newsData.title }
-    });
-
-    if (newsWithTitle) {
-      throw ConflictError(newsData.title);
-    }
+    await assertDoesNotExist(newsData.title)
   }
 
-  // checks news text length
-  if (newsData.text.length < 500) {
+  assertTextNotShort(newsData.text);
+  assertDateNotInPast(new Date(newsData.publicationDate));
+}
+
+async function assertDoesNotExist(title: string) {
+  const newsWithTitle = await prisma.news.findFirst({ where: { title }});
+
+  if (newsWithTitle != null) {
+    throw ConflictError(title);
+  }
+}
+
+function assertTextNotShort(text: string) {
+  if (text.length < 500) {
     throw BadRequestError("The news text must be at least 500 characters long.");
   }
+}
 
-  // checks date
+function assertDateNotInPast(publicationDate: Date) {
   const currentDate = new Date();
-  const publicationDate = new Date(newsData.publicationDate);
+
   if (publicationDate.getTime() < currentDate.getTime()) {
     throw BadRequestError("The publication date cannot be in the past.");
   }
