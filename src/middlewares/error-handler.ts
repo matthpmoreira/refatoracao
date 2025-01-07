@@ -6,6 +6,14 @@ type AppError = Error & {
   type: string
 }
 
+const CODES = {
+  "NotFound": httpStatus.NOT_FOUND,
+  "Conflict": httpStatus.CONFLICT,
+  "BadRequest": httpStatus.BAD_REQUEST,
+  "UnprocessableEntity": httpStatus.UNPROCESSABLE_ENTITY,
+  "Forbidden": httpStatus.FORBIDDEN,
+} as const;
+
 export default function errorHandlingMiddleware(
   error: Error | AppError,
   req: Request,
@@ -15,18 +23,10 @@ export default function errorHandlingMiddleware(
   console.log(error);
 
   const { name, message } = error;
-  if (name === "NotFound") {
-    return res.status(httpStatus.NOT_FOUND).send(message);
-  } else if (name === "Conflict") {
-    return res.status(httpStatus.CONFLICT).send(message);
-  } else if (name === "BadRequest") {
-    return res.status(httpStatus.BAD_REQUEST).send(message);
-  } else if (name === "UnprocessableEntity") {
-    return res.status(httpStatus.UNPROCESSABLE_ENTITY).send(message);
-  } else if (name === "Forbidden") {
-    return res.status(httpStatus.FORBIDDEN).send(message);
+
+  if (name in CODES) {
+    return res.status(CODES[name]).send(message);
   } else {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR);
   }
-
 }
